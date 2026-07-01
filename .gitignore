@@ -1,0 +1,27 @@
+# Secrets et variables d'environnement
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kubeconfig*
+
+# Logs et fichiers temporaires
+*.log
+kind-logs/
+tmp/
+.cache/
+
+# Terraform, si un fichier est ajouté par erreur dans ce dépôt
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Éditeurs
+.vscode/
+.idea/
+
+# Systèmes d'exploitation
+.DS_Store
+Thumbs.db

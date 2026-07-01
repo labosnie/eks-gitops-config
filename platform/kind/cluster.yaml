@@ -1,0 +1,16 @@
+# Cluster Kubernetes local destiné à l'apprentissage et au développement.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+networking:
+  # Nous commençons uniquement avec IPv4 pour rester simples.
+  ipFamily: ipv4
+
+nodes:
+  # Le control plane pilote et conserve l'état du cluster.
+  - role: control-plane
+    image: kindest/node:v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95
+
+  # Le worker exécutera nos applications.
+  - role: worker
+    image: kindest/node:v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95

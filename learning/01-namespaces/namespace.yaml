@@ -1,0 +1,23 @@
+# Version de l'API Kubernetes utilisée par la ressource.
+apiVersion: v1
+
+# Type de ressource à créer.
+kind: Namespace
+
+# Informations permettant d'identifier et de classer la ressource.
+metadata:
+  name: incident-platform
+
+  labels:
+    # Indique que ce namespace appartient à notre plateforme d'incidents.
+    app.kubernetes.io/part-of: incident-platform
+
+    # Identifie l'environnement actuel.
+    environment: local
+
+    # Bloque certaines configurations de Pods manifestement dangereuses.
+    pod-security.kubernetes.io/enforce: baseline
+
+    # Signale les écarts par rapport au niveau de sécurité strict.
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
