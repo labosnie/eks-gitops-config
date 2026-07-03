@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: hello-service
+  namespace: incident-platform
+
+  labels:
+    app.kubernetes.io/name: hello
+    app.kubernetes.io/part-of: incident-platform
+    environment: local
+
+spec:
+  # ClusterIP rend le Service accessible uniquement
+  # depuis le cluster Kubernetes.
+  type: ClusterIP
+
+  # Le Service enverra du trafic uniquement aux Pods
+  # qui possèdent exactement ces deux labels.
+  selector:
+    app.kubernetes.io/name: hello
+    app.kubernetes.io/instance: hello-local
+
+  ports:
+    - name: http
+      protocol: TCP
+
+      # Port stable proposé par le Service.
+      port: 80
+
+      # Nom du port défini dans le Deployment.
+      # Il correspond actuellement au port 8080 du conteneur.
+      targetPort: http
