@@ -11,27 +11,25 @@ metadata:
     environment: local
 
 spec:
-  # Nombre de Pods que Kubernetes doit maintenir en fonctionnement.
+  # Kubernetes doit maintenir deux Pods disponibles.
   replicas: 2
 
-  # Le Deployment reconnaît ses Pods grâce à ces labels.
   selector:
     matchLabels:
       app.kubernetes.io/name: hello
       app.kubernetes.io/instance: hello-local
 
-  # Stratégie utilisée lors des changements de version.
   strategy:
     type: RollingUpdate
 
     rollingUpdate:
-      # Aucun Pod existant ne doit être indisponible pendant la mise à jour.
+      # Aucun ancien Pod ne doit être indisponible
+      # avant qu'un nouveau Pod soit prêt.
       maxUnavailable: 0
 
-      # Kubernetes peut créer temporairement un Pod supplémentaire.
+      # Un Pod supplémentaire peut être créé temporairement.
       maxSurge: 1
 
-  # Modèle utilisé pour créer chaque Pod.
   template:
     metadata:
       labels:
@@ -49,9 +47,6 @@ spec:
 
       containers:
         - name: web
-
-          # L'image est verrouillée avec son digest pour garantir
-          # que Kubernetes utilise toujours exactement la même image.
           image: busybox:1.36.1@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
           imagePullPolicy: IfNotPresent
 
@@ -59,7 +54,7 @@ spec:
             - sh
             - -c
             - |
-              echo "Bonjour depuis un Deployment Kubernetes" > /tmp/index.html
+              printf 'Bonjour depuis le Pod : %s\n' "$(hostname)" > /tmp/index.html
               httpd -f -p 8080 -h /tmp
 
           ports:
