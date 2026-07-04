@@ -1,60 +1,182 @@
-# Project Tracker
+# Incident 001 — Contrôleur Ingress sur le mauvais nœud kind
 
-## Projet
+## Résumé
 
-Plateforme GitOps Kubernetes sur AWS EKS.
+Lors de la configuration de l’Ingress local, l’application ne répondait pas via `localhost:8080`.
 
-## Statut global
+La commande suivante échouait :
 
-Phase d'apprentissage Kubernetes local.
+```bash
+curl -H "Host: hello.localhost" http://localhost:8080
+```
 
-## Environnement validé
+Erreur obtenue :
 
-- Windows 11
-- WSL2
-- Ubuntu 24.04
-- Docker Desktop opérationnel depuis Ubuntu
-- kubectl v1.35.6
-- kind v0.32.0
-- cluster Kubernetes v1.35.5
+```text
+curl: (56) Recv failure: Connection reset by peer
+```
 
-## Architecture locale actuelle
+Le problème venait du fait que le trafic entrait dans le cluster par le nœud `control-plane`, alors que le contrôleur Ingress NGINX tournait sur le nœud `worker`.
 
-- 1 control plane
-- 1 worker
-- cluster : `gitops-local`
-- namespace applicatif : `incident-platform`
+---
 
-## Étapes terminées
+## Contexte
 
-- [x] Préparation de WSL2
-- [x] Validation de Docker
-- [x] Installation de kubectl
-- [x] Installation de kind
-- [x] Création du cluster local
-- [x] Validation des nœuds et Pods système
-- [x] Création déclarative du namespace `incident-platform`
+Cluster kind local :
 
-## Décisions d'architecture
+```text
+gitops-local-control-plane
+gitops-local-worker
+```
 
-### ADR-001 — Utilisation de kind
+Ports exposés par kind :
 
-kind est utilisé pour l'apprentissage et la validation locale avant EKS.
+```text
+localhost:8080 → gitops-local-control-plane:80
+localhost:8443 → gitops-local-control-plane:443
+```
 
-### ADR-002 — Cluster local léger
+Application :
 
-Le cluster commence avec un control plane et un worker afin de limiter la consommation de ressources.
+```text
+Namespace  : incident-platform
+Deployment : hello-deployment
+Service    : hello-service
+Ingress    : hello-ingress
+```
 
-### ADR-003 — Séparation en trois dépôts
+Contrôleur Ingress :
 
-- application ;
-- configuration GitOps ;
-- infrastructure Terraform.
+```text
+Namespace : ingress-nginx
+Pod       : ingress-nginx-controller
+```
 
-### ADR-004 — Kubernetes 1.35
+---
 
-La branche Kubernetes 1.35 est utilisée localement afin de rester proche de la future cible EKS.
+## Diagnostic
 
-## Prochaine étape
+L’application était saine :
 
-Créer et observer un premier Pod, puis comprendre pourquoi un Pod seul n'est pas suffisant pour une application professionnelle.
+```bash
+kubectl get deployment,service,pods -n incident-platform
+```
+
+Le Deployment était disponible, le Service existait et les Pods étaient `Running`.
+
+Le Service trouvait bien les Pods :
+
+```bash
+kubectl get endpointslices -n incident-platform \
+  -l kubernetes.io/service-name=hello-service -o wide
+```
+
+L’Ingress pointait correctement vers le Service :
+
+```bash
+kubectl describe ingress hello-ingress -n incident-platform
+```
+
+Résultat important :
+
+```text
+hello.localhost / → hello-service:80
+```
+
+Le problème ne venait donc pas du Deployment, du Service, des labels ou de l’Ingress.
+
+La cause a été trouvée avec :
+
+```bash
+kubectl get pods -n ingress-nginx -o wide
+```
+
+État problématique :
+
+```text
+ingress-nginx-controller → gitops-local-worker
+```
+
+---
+
+## Cause racine
+
+Dans kind, les ports exposés avec `extraPortMappings` sont attachés à un nœud précis.
+
+Dans notre cas :
+
+```text
+localhost:8080 → gitops-local-control-plane:80
+```
+
+Mais le contrôleur Ingress tournait sur :
+
+```text
+gitops-local-worker
+```
+
+Le trafic arrivait donc sur le nœud `control-plane`, alors que NGINX tournait sur le nœud `worker`.
+
+---
+
+## Correction
+
+Ajouter un label au nœud `control-plane` :
+
+```bash
+kubectl label node gitops-local-control-plane ingress-ready=true --overwrite
+```
+
+Forcer le contrôleur Ingress à tourner sur ce nœud :
+
+```bash
+kubectl patch deployment ingress-nginx-controller \
+  -n ingress-nginx \
+  --type='merge' \
+  -p '{"spec":{"template":{"spec":{"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"},{"key":"node-role.kubernetes.io/master","operator":"Exists","effect":"NoSchedule"}]}}}}'
+```
+
+Vérifier le redéploiement :
+
+```bash
+kubectl rollout status deployment/ingress-nginx-controller \
+  -n ingress-nginx --timeout=120s
+```
+
+---
+
+## Validation
+
+Le contrôleur Ingress tourne maintenant sur le bon nœud :
+
+```bash
+kubectl get pods -n ingress-nginx -o wide
+```
+
+Résultat attendu :
+
+```text
+ingress-nginx-controller → gitops-local-control-plane
+```
+
+Test réussi :
+
+```bash
+curl -H "Host: hello.localhost" http://localhost:8080
+```
+
+Résultat :
+
+```text
+Bonjour depuis le Pod : hello-deployment-xxxxx
+```
+
+---
+
+## Leçons apprises
+
+* Dans kind, un port exposé est lié à un nœud précis.
+* Un Pod `Running` ne garantit pas que tout le flux réseau fonctionne.
+* Il faut vérifier toute la chaîne : Ingress Controller → Ingress → Service → EndpointSlice → Pods.
+* Le contrôleur Ingress doit être placé sur le nœud qui reçoit le trafic local.
+* La correction actuelle est manuelle ; elle devra plus tard être rendue reproductible avec GitOps, Helm ou Kustomize.

@@ -3,14 +3,36 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 
 networking:
-  # Nous commençons uniquement avec IPv4 pour rester simples.
   ipFamily: ipv4
 
 nodes:
-  # Le control plane pilote et conserve l'état du cluster.
+  # Le control plane pilote le cluster.
+  # On expose aussi des ports locaux pour l'Ingress.
   - role: control-plane
     image: kindest/node:v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95
 
-  # Le worker exécutera nos applications.
+    # Labels utilisés par certains Ingress Controllers
+    # pour s'exécuter sur le nœud exposé.
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+
+    extraPortMappings:
+      # Accès HTTP local :
+      # http://hello.localhost:8080
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP
+
+      # Accès HTTPS local futur :
+      # https://hello.localhost:8443
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+
+  # Le worker exécutera nos workloads applicatifs.
   - role: worker
     image: kindest/node:v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95
