@@ -63,11 +63,24 @@ spec:
                 configMapKeyRef:
                   name: hello-config
                   key: APP_MESSAGE
+
             - name: APP_ENV
               valueFrom:
                 configMapKeyRef:
                   name: hello-config
                   key: APP_ENV
+
+            - name: DEMO_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hello-secret
+                  key: DEMO_API_TOKEN
+
+            - name: DEMO_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hello-secret
+                  key: DEMO_DATABASE_PASSWORD
 
           ports:
             - name: http
