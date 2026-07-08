@@ -54,8 +54,20 @@ spec:
             - sh
             - -c
             - |
-              printf 'Bonjour depuis le Pod : %s\n' "$(hostname)" > /tmp/index.html
+              printf '%s : %s\n' "$APP_MESSAGE" "$(hostname)" > /tmp/index.html
               httpd -f -p 8080 -h /tmp
+
+          env:
+            - name: APP_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: hello-config
+                  key: APP_MESSAGE
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: hello-config
+                  key: APP_ENV
 
           ports:
             - name: http

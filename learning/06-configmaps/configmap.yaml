@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-config
+  namespace: incident-platform
+  labels:
+    app.kubernetes.io/name: hello
+    app.kubernetes.io/part-of: incident-platform
+    environment: local
+data:
+  APP_MESSAGE: "Bonjour depuis une ConfigMap Kubernetes"
+  APP_ENV: "local"
