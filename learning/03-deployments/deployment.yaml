@@ -98,6 +98,14 @@ spec:
               drop:
                 - ALL
 
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+            timeoutSeconds: 1
+
           readinessProbe:
             httpGet:
               path: /
