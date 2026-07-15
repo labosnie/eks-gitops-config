@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emptydir-demo
+  namespace: incident-platform
+  labels:
+    app.kubernetes.io/name: emptydir-demo
+    app.kubernetes.io/part-of: incident-platform
+spec:
+  restartPolicy: Always
+
+  containers:
+    - name: storage-demo
+      image: busybox:1.36.1
+      imagePullPolicy: IfNotPresent
+
+      command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /data/creation.txt ]; then
+            echo "Volume créé par le conteneur" > /data/creation.txt
+          fi
+
+          trap 'exit 1' TERM
+          sleep 3600 &
+          wait $!
+
+      volumeMounts:
+        - name: temporary-storage
+          mountPath: /data
+
+      resources:
+        requests:
+          cpu: 5m
+          memory: 8Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+
+  volumes:
+    - name: temporary-storage
+      emptyDir: {}
