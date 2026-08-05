@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: incident-api
+  namespace: incident-platform
+  labels:
+    app.kubernetes.io/name: incident-api
+    app.kubernetes.io/part-of: incident-platform
+    environment: local
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: api.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: incident-api
+                port:
+                  name: http
