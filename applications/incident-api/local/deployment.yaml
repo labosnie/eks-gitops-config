@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: incident-api
     app.kubernetes.io/part-of: incident-platform
-    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/version: "0.5.0"
     environment: local
 spec:
   replicas: 2
@@ -28,7 +28,7 @@ spec:
         app.kubernetes.io/name: incident-api
         app.kubernetes.io/instance: incident-api-local
         app.kubernetes.io/part-of: incident-platform
-        app.kubernetes.io/version: "0.3.0"
+        app.kubernetes.io/version: "0.5.0"
         environment: local
 
     spec:
@@ -43,7 +43,7 @@ spec:
 
       containers:
         - name: api
-          image: incident-platform-api:0.3.0
+          image: incident-platform-api:0.5.0
           imagePullPolicy: IfNotPresent
 
           envFrom:
