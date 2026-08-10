@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  repository: incident-platform-api
+  tag: "0.5.0"
+  pullPolicy: IfNotPresent
+
+config:
+  appEnv: development
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.dev.example.com
