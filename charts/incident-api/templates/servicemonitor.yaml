@@ -1,0 +1,21 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: incident-api
+  labels:
+    app.kubernetes.io/name: incident-api
+    app.kubernetes.io/part-of: incident-platform
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: incident-api
+
+  endpoints:
+    - port: http
+      path: {{ .Values.metrics.path }}
+      interval: {{ .Values.metrics.interval }}
+      scrapeTimeout: {{ .Values.metrics.scrapeTimeout }}
+{{- end }}

@@ -24,6 +24,9 @@ spec:
         prometheus:
           prometheusSpec:
             retention: 6h
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}
 
         kubeEtcd:
           enabled: false
