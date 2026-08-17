@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alertmanager-config-local
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/labosnie/eks-gitops-config.git
+    targetRevision: main
+    path: monitoring/alertmanager/local
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true

@@ -23,25 +23,27 @@ spec:
               resolve_timeout: 5m
 
             route:
-              receiver: discord
+              receiver: 'null'
               group_by:
                 - alertname
-                - service
-              group_wait: 10s
-              group_interval: 1m
-              repeat_interval: 3h
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 12h
+              routes:
+                - receiver: 'null'
+                  matchers:
+                    - alertname = "Watchdog"
 
             receivers:
               - name: 'null'
 
-              - name: discord
-                discord_configs:
-                  - send_resolved: true
-                    webhook_url_file: /etc/alertmanager/secrets/discord-webhook/url
-
           alertmanagerSpec:
-            secrets:
-              - discord-webhook
+            alertmanagerConfigSelector:
+              matchLabels:
+                alertconfig: incident-api-discord
+
+            alertmanagerConfigMatcherStrategy:
+              type: None
 
         grafana:
           enabled: true
