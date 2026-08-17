@@ -32,6 +32,8 @@ spec:
               repeat_interval: 3h
 
             receivers:
+              - name: 'null'
+
               - name: discord
                 discord_configs:
                   - send_resolved: true
