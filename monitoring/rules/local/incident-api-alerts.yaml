@@ -1,0 +1,65 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: incident-api-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+
+spec:
+  groups:
+    - name: incident-api.rules
+      rules:
+
+        - alert: IncidentAPIHigh5xx
+          expr: |
+            sum(
+              rate(incident_api_http_requests_total{status=~"5.."}[2m])
+            ) > 0
+          for: 1m
+          labels:
+            severity: warning
+            service: incident-api
+          annotations:
+            summary: "Erreurs HTTP 5xx sur Incident API"
+            description: "Incident API retourne des erreurs HTTP 5xx depuis au moins 1 minute."
+
+        - alert: IncidentAPIHighLatency
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (
+                rate(incident_api_http_request_duration_seconds_bucket[5m])
+              )
+            ) > 0.5
+          for: 2m
+          labels:
+            severity: warning
+            service: incident-api
+          annotations:
+            summary: "Latence élevée sur Incident API"
+            description: "La latence p95 dépasse 500 ms depuis au moins 2 minutes."
+
+        - alert: IncidentAPIPodsUnavailable
+          expr: |
+            max(
+              kube_deployment_status_replicas_available{
+                namespace="incident-platform",
+                deployment="incident-api"
+              }
+            )
+            <
+            max(
+              kube_deployment_spec_replicas{
+                namespace="incident-platform",
+                deployment="incident-api"
+              }
+            )
+          for: 1m
+          labels:
+            severity: critical
+            service: incident-api
+          annotations:
+            summary: "Pods Incident API indisponibles"
+            description: "Le nombre de pods disponibles est inférieur au nombre demandé depuis au moins 1 minute."
